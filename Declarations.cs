@@ -2,6 +2,7 @@
 
   // This is a skeleton program for developing a parser for Modula-2 declarations
   // P.D. Terry, Rhodes University
+  //g16V4332, g16M4204, g16T3531, g16N3498
   using Library;
   using System;
   using System.Text;
@@ -139,7 +140,6 @@
                 else{
                   symKind = typeSym;
                 }
-                GetChar();
                 break;
             case ("VAR"):
                  GetChar();
@@ -155,7 +155,6 @@
                 else{
                   symKind = varSym ;
                 }
-                GetChar();
                 break;
             case ("ARRAY"):
                 GetChar();
@@ -171,7 +170,6 @@
                 else{
                   symKind = arraySym ;
                 }
-                GetChar();
                 break;
             case ("RECORD"):
                GetChar();
@@ -187,7 +185,6 @@
                 else{
                   symKind = recordSym ;
                 }
-                GetChar();
                 break;
             case ("END"):
                 GetChar();
@@ -203,7 +200,6 @@
                 else{
                   symKind = endSym ;
                 }
-                GetChar();
                 break;
             case ("SET"):
                 GetChar();
@@ -219,7 +215,6 @@
                 else{
                   symKind = setSym ;
                 }
-                GetChar();
                 break;
             case ("OF"):
                GetChar();
@@ -235,7 +230,6 @@
                 else{
                   symKind = ofSym ;
                 }
-                GetChar();
                 break;
             case ("POINTER"):
                 GetChar();
@@ -251,7 +245,6 @@
                 else{
                   symKind = pointerSym ;
                 }
-                GetChar();
                 break;
             case ("TO"):
                 GetChar();
@@ -267,7 +260,6 @@
                 else{
                   symKind = toSym ;
                 }
-                GetChar();
                 break;
             default:
                 symKind = indenSym;
@@ -291,6 +283,7 @@
                 if(ch=='.')
                 {
                   symLex.Append(ch);
+                  GetChar();
                   symKind = doublestopSym;
                 }
                 else{
@@ -321,25 +314,26 @@
                 GetChar();
                 if(ch == '*')
                 {
-                  symLex.Append("*");
                   GetChar();
-                  while(ch != '*')
+                  while(ch != '\0')
                   {
                     GetChar();
-                    symLex.Append(ch);
-                  }                  
-                  GetChar();
-                  if(ch==')')
-                  {
-                    symLex.Append(ch);
-                    GetChar();
-                    symKind=commentSym;
-                  }
+                    if(ch =='*')
+                    { 
+                      GetChar();
+                      if(ch == ')')
+                      {
+                        GetChar();
+                        GetSym(); 
+                        break;
+                      }
+                    } 
+                  }    
+                  return;
                 }
                 else
                 {
                 symKind= LbraSym;
-                GetChar();
                 }
                 break;
               case (")"):
@@ -365,7 +359,12 @@
 
     static void Accept(int wantedSym, string errorMessage) {
     // Checks that lookahead token is wantedSym
-      if (sym.kind == wantedSym) GetSym(); else Abort(errorMessage);
+      if (sym.kind == wantedSym) 
+      {
+        GetSym();
+        Console.WriteLine(sym.val);
+      } 
+      else Abort(errorMessage);
     } // Accept
 
     static void Accept(IntSet allowedSet, string errorMessage) {
@@ -376,11 +375,8 @@
    static void Mod2Decl()           
       {
         //Mod2Dec1 = {Declaration}
-        Console.WriteLine("CHECKING");
-        Console.WriteLine(sym.kind);
         while(sym.kind==typeSym || sym.kind==varSym)
         {
-          Console.WriteLine("CHECKING L");
           Declaration();
         }
 
@@ -392,11 +388,9 @@
         {
           case (typeSym):
            Accept(typeSym, "TYPE expected");
-           Console.WriteLine("CHECKING  DECLARA");
            while(sym.kind == indenSym)
            {
              TypeDec1();
-             GetSym();
              Accept(semicolSym, "; expected");
            }
            break;
@@ -405,7 +399,6 @@
             while(sym.kind == indenSym)
             {
               VarDec1();
-              GetSym();
               Accept(semicolSym, "; expected");
             }
             break;
@@ -414,16 +407,13 @@
       static void TypeDec1()
       { //TypeDec1 = identifier "=" Type .
         Accept(indenSym, "Identifier expected");
-        GetSym();
         Accept(equSym, "= expected");
         Type();
-
       }
       static void VarDec1()
       {
         // VARDec1 = identList ":" Type
         IdentList();
-        GetSym();
         Accept(coloSym,": expected");
         Type();
       }
@@ -461,8 +451,6 @@
           switch(sym.kind){
             case (indenSym):
               QualIdent();
-              GetSym();
-              Accept(LsquabraSym,"[ expected");
               if(sym.kind == LsquabraSym)
               {
                 SubRange();
@@ -482,14 +470,14 @@
         Accept(indenSym, "Identifier expected");
         while(sym.kind == stopSym)
         {
-          GetSym();
+          Accept(stopSym, ". expected");
           Accept(indenSym, "Identifier expected");
-          GetSym();
         }
       }
       static void SubRange()
       // Subrange    = "[" Constant ".." Constant "]"  
       {
+        
         Accept(LsquabraSym, "[ expected");
         Constant();
         Accept(doublestopSym, ".. expected");
@@ -510,9 +498,7 @@
       // Enumeration = "(" IdentList ")" .
       {
           Accept(LbraSym, "( expected");
-          GetSym();
-          Accept(indenSym, "Identifier expected");
-          GetSym();
+          IdentList();
           Accept(RbraSym, ") expected");
       }
 
@@ -522,9 +508,8 @@
         Accept(indenSym, "Identifier expected");
         while(sym.kind == commaSym)
         {
-          GetSym();
+          Accept(commaSym, "Comma expected");
           Accept(indenSym, "Identifier expected");
-          GetSym();
         }
       }
 
@@ -535,18 +520,17 @@
         SimpleType();
         while(sym.kind == commaSym)
         {
-          GetSym();
           SimpleType();
-          GetSym();
         }
         Accept(ofSym, "OF expected");
+        
         Type();
       }
       static void RecordType()
       // RecordType  = "RECORD" FieldLists "END" .
       {
-        Accept(arraySym, "ARRAY expected");
-        FieldList();
+        Accept(recordSym, "RECORD expected");
+        FieldLists();
         Accept(endSym, "END expected");
       }
       static void FieldLists()
@@ -555,9 +539,8 @@
         FieldList();
         while(sym.kind == semicolSym)
         {
-          GetSym();
+          Accept(semicolSym, "; Expected");
           FieldList();
-          GetSym();
         }
       }
       static void FieldList()
@@ -573,7 +556,6 @@
       // SetType     = "SET" "OF" SimpleType 
       {
         Accept(setSym, "SET expected");
-        GetSym();
         Accept(ofSym, "OF expected");
         SimpleType();
       }
@@ -581,7 +563,6 @@
       // PointerType = "POINTER" "TO" Type .
       {
         Accept(pointerSym, "POINTER expected");
-        GetSym();
         Accept(toSym, "TO expected");
         Type();
       }
@@ -603,11 +584,11 @@
 
   //  To test the scanner we can use a loop like the following:
 
-      do {
+    /*  do {
         GetSym();                                 // Lookahead symbol
         OutFile.StdOut.Write(sym.kind, 3);
         OutFile.StdOut.WriteLine(" " + sym.val);  // See what we got
-      } while (sym.kind != EOFSym);
+      } while (sym.kind != EOFSym); */
 
   //  After the scanner is debugged we shall substitute this code:
 
