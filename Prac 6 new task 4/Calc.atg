@@ -1,0 +1,134 @@
+using Library;
+
+COMPILER Calc $NC
+//  Put your names and a description here
+
+static int ToInt(bool b) {
+// return 0 or 1 according as b is false or true
+  return b ? 1 : 0;
+} // ToInt
+
+static bool ToBool(int i) {
+// return false or true according as i is 0 or 1
+  return i == 0 ? false : true;
+} // ToBool
+
+// List keeps track of the symbol table
+
+
+CHARACTERS
+  digit      = "0123456789" .
+  letter     = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" .
+
+TOKENS
+  number     = digit { digit } .
+  identifier = letter { letter | digit } .
+
+IGNORE CHR(0) .. CHR(31)
+
+PRODUCTIONS
+  Calc                                        (. bool calConst; .)
+  = (. int calConstValue = ToInt(calConst); .)
+  { Print<out calConstValue>
+  | Assignment<out calConstValue>
+  } "quit"
+  .
+
+  Assignment<out int AssignConst>            
+  =
+  Variable                                    
+  "="
+  Expression<out AssignConst>                 
+  SYNC ";"
+  .
+
+  Print<out int printConst>                   
+  =
+  "print"
+  Expression<out printConst>
+  { WEAK ","
+    Expression<out printAlsoConst>            
+  }
+  SYNC ";"
+  .
+
+  Expression<out int ExprValue>               (. int ExprAlsoValue; .)
+  =
+  AndExp<out ExprValue>
+  { "||"
+    AndExp<out ExprAlsoValue>                 (. ExprValue = ToInt(ExprValue || ExprAlsoValue); .)        
+  } .
+
+  AndExp<out int andExpConst>                 (. int andExpAlsoConst; .)
+  =
+  EqlExp<out andExpConst>
+  { "&&"
+    EqlExp<out andExpAlsoConst>               (. andExpConst = ToInt(ToBool(andExpConst) && ToBool(andExpAlsoConst)); .)
+  } .
+
+  EqlExp<out int equalExpConst>               (. int equalExpAlsoConst; .)
+  =
+  RelExp<out equalExpConst>
+  { 
+      "=="  RelExp<out equalExpAlsoConst>     (. equalExpConst = ToInt(equalExpConst == equalExpAlsoConst); .)
+    | "!="  RelExp<out equalExpAlsoConst>     (. equalExpConst = ToInt(equalExpConst != equalExpAlsoConst); .)
+  } .
+
+  RelExp<out int relExpConst>                 (. int relExpAlsoConst; .)
+  =                                          
+  AddExp<out relExpConst>
+  [ 
+      "<"   AddExp<out relExpAlsoConst>       (. relExpConst = ToInt(relExpConst < relExpAlsoConst); .)
+    | "<="  AddExp<out relExpAlsoConst>       (. relExpConst = ToInt(relExpConst <= relExpAlsoConst); .)
+    | ">"   AddExp<out relExpAlsoConst>       (. relExpConst = ToInt(relExpConst > relExpAlsoConst); .)
+    | ">="  AddExp<out relExpAlsoConst>       (. relExpConst = ToInt(relExpConst >= relExpAlsoConst); .)
+    
+  ] .
+
+  AddExp<out int addExpConst>                 (. int addExpAlsoConst; .)
+  =
+  MultExp<out addExpConst>
+  { 
+      "+" MultExp<out addExpAlsoConst>        (. addExpConst = addExpConst += addExpAlsoConst; .)
+    | "-" MultExp<out addExpAlsoConst>        (. addExpConst = addExpConst -= addExpAlsoConst; .)
+  } .
+
+  MultExp<out int multValue>                (. int multAlsoValue; .)
+  =
+  UnaryExp<out multValue>
+  { 
+      "*" UnaryExp<out multAlsoValue>      (. multValue *= multAlsoValue; .)
+    | "/" UnaryExp<out multAlsoValue>      (. multValue /= multAlsoValue; .)
+    | "%" UnaryExp<out multAlsoValue>      (. multValue %= multAlsoValue; .)                                     
+  } .
+
+  UnaryExp<out int UnaryValue>        
+  =   Factor<out UnaryValue>
+    | "+" UnaryExp<out UnaryValue>
+    | "-" UnaryExp<out UnaryValue>
+    | "!" UnaryExp<out UnaryValue>
+  .
+
+  Factor<out int factorNum>           
+  =
+      Variable                        (. factorNum = ValueOf(sym.val); .)
+    | Number                          (. factorNum = Convert.ToInt32(sym.val); .)
+    | "true"                          (. factorNum = ToInt(true); .)
+    | "false"                         (. factorNum = ToInt(false); .)
+    | "(" Expression<out factorNum>
+      ")"
+  .
+
+  Variable
+  =
+  identifier                          
+  .
+
+  Number
+  =
+  number                              
+  .
+
+
+
+END Calc.
