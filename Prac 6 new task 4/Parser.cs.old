@@ -23,22 +23,22 @@ public class Parser {
 	public const int comma_Sym = 7;
 	public const int barbar_Sym = 8;
 	public const int andand_Sym = 9;
-	public const int equalequal_Sym = 10;
-	public const int bangequal_Sym = 11;
-	public const int less_Sym = 12;
-	public const int lessequal_Sym = 13;
-	public const int greater_Sym = 14;
-	public const int greaterequal_Sym = 15;
-	public const int plus_Sym = 16;
-	public const int minus_Sym = 17;
-	public const int star_Sym = 18;
-	public const int slash_Sym = 19;
-	public const int percent_Sym = 20;
-	public const int bang_Sym = 21;
-	public const int true_Sym = 22;
-	public const int false_Sym = 23;
-	public const int lparen_Sym = 24;
-	public const int rparen_Sym = 25;
+	public const int plus_Sym = 10;
+	public const int minus_Sym = 11;
+	public const int bang_Sym = 12;
+	public const int true_Sym = 13;
+	public const int false_Sym = 14;
+	public const int lparen_Sym = 15;
+	public const int rparen_Sym = 16;
+	public const int star_Sym = 17;
+	public const int slash_Sym = 18;
+	public const int percent_Sym = 19;
+	public const int less_Sym = 20;
+	public const int lessequal_Sym = 21;
+	public const int greater_Sym = 22;
+	public const int greaterequal_Sym = 23;
+	public const int equalequal_Sym = 24;
+	public const int bangequal_Sym = 25;
 	public const int NOT_SYM = 26;
 	// pragmas
 
@@ -57,11 +57,20 @@ public class Parser {
   return b ? 1 : 0;
 } // ToInt
 
+static string Variable_Val = "";
+
 static bool ToBool(int i) {
 // return false or true according as i is 0 or 1
   return i == 0 ? false : true;
 } // ToBool
 
+const int
+   noType   = 0,
+   intType  = 1,
+   boolType = 2;
+
+static int checkType= 0;
+static int save =  0;
 // List keeps track of the symbol table
 
 
@@ -140,8 +149,8 @@ static bool ToBool(int i) {
 	}
 
 	static void Calc() {
-		bool calConst;
-		int calConstValue = ToInt(calConst);
+		int calConstValue;
+		Table.ClearTable();
 		while (la.kind == identifier_Sym || la.kind == print_Sym) {
 			if (la.kind == print_Sym) {
 				Print(out calConstValue);
@@ -150,6 +159,7 @@ static bool ToBool(int i) {
 			}
 		}
 		Expect(quit_Sym);
+		Table.PrintTable();
 	}
 
 	static void Print(out int printConst) {
@@ -158,7 +168,6 @@ static bool ToBool(int i) {
 		Expression(out printConst);
 		while (WeakSeparator(comma_Sym, 1, 2)) {
 			Expression(out printAlsoConst);
-			printConst = printConst && printAlsoConst;
 		}
 		while (!(la.kind == EOF_SYM || la.kind == semicolon_Sym)) {SynErr(27); Get();}
 		Expect(semicolon_Sym);
@@ -166,8 +175,10 @@ static bool ToBool(int i) {
 
 	static void Assignment(out int AssignConst) {
 		Variable();
+		Variable_Val = token.val;
 		Expect(equal_Sym);
 		Expression(out AssignConst);
+		Table.AddRef(Variable_Val, true, AssignConst);
 		while (!(la.kind == EOF_SYM || la.kind == semicolon_Sym)) {SynErr(28); Get();}
 		Expect(semicolon_Sym);
 	}
@@ -177,102 +188,168 @@ static bool ToBool(int i) {
 	}
 
 	static void Expression(out int ExprValue) {
-		int ExprAlsoValue;
+		int ExprAlsoValue; ExprValue = 0;
 		AndExp(out ExprValue);
 		while (la.kind == barbar_Sym) {
 			Get();
+			save = checkType;
 			AndExp(out ExprAlsoValue);
-			ExprValue = ToInt(ExprValue || ExprAlsoValue);
+			if(checkType == noType && save ==noType) { }
+			else if(checkType == boolType && save == boolType){
+			  if(ToBool(ExprValue)) ExprValue = 1;
+			  else{
+			    ExprValue = ExprAlsoValue;
+			  }
+			}
+			else{
+			  IO.WriteLine("Error !! Mixed Type 1");
+			}
+			
 		}
 	}
 
 	static void AndExp(out int andExpConst) {
-		int andExpAlsoConst;
+		int andExpAlsoConst; andExpConst = 0;
 		EqlExp(out andExpConst);
 		while (la.kind == andand_Sym) {
+			save = checkType;
 			Get();
 			EqlExp(out andExpAlsoConst);
-			andExpConst = ToInt(ToBool(andExpConst) && ToBool(andExpAlsoConst));
+			if(checkType == noType && save == noType) { }
+			else if(checkType == boolType && save == boolType){
+			  if(!ToBool(andExpConst)) andExpConst = 0;
+			  else if (ToBool(andExpAlsoConst)){
+			    andExpConst = andExpAlsoConst;
+			  }
+			  else{
+			    andExpConst = 0;
+			  }
+			}
+			else{
+			    IO.WriteLine("Error !! Mixed Type 1");
+			}
+			
 		}
 	}
 
 	static void EqlExp(out int equalExpConst) {
-		int equalExpAlsoConst;
+		int equalExpAlsoConst; string combool ;
 		RelExp(out equalExpConst);
+		save = checkType;
 		while (la.kind == equalequal_Sym || la.kind == bangequal_Sym) {
-			if (la.kind == equalequal_Sym) {
-				Get();
-				RelExp(out equalExpAlsoConst);
-				equalExpConst = ToInt(equalExpConst == equalExpAlsoConst);
-			} else {
-				Get();
-				RelExp(out equalExpAlsoConst);
-				equalExpConst = ToInt(equalExpConst != equalExpAlsoConst);
-			}
+			EqlOp(out combool);
+			RelExp(out equalExpAlsoConst);
+			if((checkType == boolType && save == boolType) || (checkType == noType && save == noType) ) {
+			   if(combool =="Eq"){equalExpConst = ToInt(equalExpConst ==equalExpAlsoConst);}
+			   if(combool =="NotEq"){equalExpConst = ToInt(equalExpAlsoConst != equalExpAlsoConst) ;}
+			   }else
+			   {
+			     IO.WriteLine("Error !! Mixed Type 1");
+			   }
+			
 		}
 	}
 
 	static void RelExp(out int relExpConst) {
-		int relExpAlsoConst;
+		int relExpAlsoConst; string Comp;
 		AddExp(out relExpConst);
 		if (StartOf(3)) {
-			if (la.kind == less_Sym) {
-				Get();
-				AddExp(out relExpAlsoConst);
-				relExpConst = ToInt(relExpConst < relExpAlsoConst);
-			} else if (la.kind == lessequal_Sym) {
-				Get();
-				AddExp(out relExpAlsoConst);
-				relExpConst = ToInt(relExpConst <= relExpAlsoConst);
-			} else if (la.kind == greater_Sym) {
-				Get();
-				AddExp(out relExpAlsoConst);
-				relExpConst = ToInt(relExpConst > relExpAlsoConst);
-			} else {
-				Get();
-				AddExp(out relExpAlsoConst);
-				relExpConst = ToInt(relExpConst >= relExpAlsoConst);
-			}
+			RelOp(out Comp);
+			AddExp(out relExpAlsoConst);
+			if(checkType == boolType)
+			 {
+			   if(Comp=="LT"){relExpConst =ToInt(relExpConst < relExpAlsoConst) ;}
+			   if(Comp=="LE"){relExpConst = ToInt(relExpConst <= relExpAlsoConst) ;}
+			   if(Comp=="GT"){relExpConst = ToInt(relExpConst > relExpAlsoConst) ;}
+			   if(Comp=="GE"){relExpConst = ToInt(relExpConst >= relExpAlsoConst) ;}
+			 }
+			 else{
+			   IO.WriteLine("Error!! Type Mix ");
+			 }
+			
 		}
+	}
+
+	static void EqlOp(out string bools) {
+		bools = "";
+		if (la.kind == equalequal_Sym) {
+			Get();
+			bools = "Eq";
+		} else if (la.kind == bangequal_Sym) {
+			Get();
+			bools = "NotEq";
+		} else SynErr(29);
 	}
 
 	static void AddExp(out int addExpConst) {
-		int addExpAlsoConst;
+		int addExpAlsoConst; string Ad_Mn;
 		MultExp(out addExpConst);
 		while (la.kind == plus_Sym || la.kind == minus_Sym) {
-			if (la.kind == plus_Sym) {
-				Get();
-				MultExp(out addExpAlsoConst);
-				addExpConst = addExpConst += addExpAlsoConst;
-			} else {
-				Get();
-				MultExp(out addExpAlsoConst);
-				addExpConst = addExpConst -= addExpAlsoConst;
-			}
+			AddOp(out Ad_Mn);
+			MultExp(out addExpAlsoConst);
+			if(checkType == noType){
+			if(checkType == noType)
+			if(Ad_Mn == "ADD"){addExpConst = addExpConst + addExpAlsoConst; }
+			if(Ad_Mn == "MIN"){addExpConst = addExpConst - addExpAlsoConst; }
+			 }
+			 else{
+			   IO.WriteLine("Error!! Type Mix");
+			 }
+			
 		}
+	}
+
+	static void RelOp(out string compare) {
+		compare = "";
+		if (la.kind == less_Sym) {
+			Get();
+			compare = "LT";
+		} else if (la.kind == lessequal_Sym) {
+			Get();
+			compare = "LE";
+		} else if (la.kind == greater_Sym) {
+			Get();
+			compare = "GT";
+		} else if (la.kind == greaterequal_Sym) {
+			Get();
+			compare = "GE";
+		} else SynErr(30);
 	}
 
 	static void MultExp(out int multValue) {
-		int multAlsoValue;
 		UnaryExp(out multValue);
+		int multAlsoValue; string Opt;
 		while (la.kind == star_Sym || la.kind == slash_Sym || la.kind == percent_Sym) {
-			if (la.kind == star_Sym) {
-				Get();
-				UnaryExp(out multAlsoValue);
-				multValue *= multAlsoValue;
-			} else if (la.kind == slash_Sym) {
-				Get();
-				UnaryExp(out multAlsoValue);
-				multValue /= multAlsoValue;
-			} else {
-				Get();
-				UnaryExp(out multAlsoValue);
-				multValue %= multAlsoValue;
-			}
+			MulOp(out Opt);
+			UnaryExp(out multAlsoValue);
+			if(checkType ==noType){
+			   if(Opt == "mul"){ multValue = multValue * multAlsoValue;}
+			   if(Opt == "div") {
+			     if(multAlsoValue != 0) multValue = multValue / multAlsoValue;
+			     else IO.WriteLine("Error !! Tried to divide by zero!");
+			   }
+			   if(Opt == "mod") {multValue = multValue % multAlsoValue;}
+			   }
+			   else {
+			     IO.WriteLine("Error!! Type Mix");
+			   }
+			
 		}
 	}
 
+	static void AddOp(out string opet) {
+		opet = "";
+		if (la.kind == plus_Sym) {
+			Get();
+			opet = "ADD";
+		} else if (la.kind == minus_Sym) {
+			Get();
+			opet = "MIN";
+		} else SynErr(31);
+	}
+
 	static void UnaryExp(out int UnaryValue) {
+		UnaryValue = 0;
 		if (StartOf(4)) {
 			Factor(out UnaryValue);
 		} else if (la.kind == plus_Sym) {
@@ -284,27 +361,52 @@ static bool ToBool(int i) {
 		} else if (la.kind == bang_Sym) {
 			Get();
 			UnaryExp(out UnaryValue);
-		} else SynErr(29);
+			if(checkType == boolType)
+			   {
+			     if (UnaryValue == 1)
+			       {UnaryValue =0;}
+			     else{ UnaryValue = 1; }
+			   }
+			   else {
+			       IO.WriteLine("Error!! Type Mix");
+			     }
+			
+		} else SynErr(32);
+	}
+
+	static void MulOp(out string op) {
+		op = "";
+		if (la.kind == star_Sym) {
+			Get();
+			op = "mul";
+		} else if (la.kind == slash_Sym) {
+			Get();
+			op = "div";
+		} else if (la.kind == percent_Sym) {
+			Get();
+			op = "mod";
+		} else SynErr(33);
 	}
 
 	static void Factor(out int factorNum) {
+		factorNum = 0;
 		if (la.kind == identifier_Sym) {
 			Variable();
-			factorNum = ValueOf(sym.val);
+			factorNum = Table.Retrieve(token.val);
 		} else if (la.kind == number_Sym) {
 			Number();
-			factorNum = Convert.ToInt32(sym.val);
+			factorNum = Convert.ToInt32(token.val); checkType =noType;
 		} else if (la.kind == true_Sym) {
 			Get();
-			factorNum = ToInt(true);
+			factorNum = ToInt(true); checkType = boolType ;
 		} else if (la.kind == false_Sym) {
 			Get();
-			factorNum = ToInt(false);
+			factorNum = ToInt(false); checkType = boolType ;
 		} else if (la.kind == lparen_Sym) {
 			Get();
 			Expression(out factorNum);
 			Expect(rparen_Sym);
-		} else SynErr(30);
+		} else SynErr(34);
 	}
 
 	static void Number() {
@@ -324,10 +426,10 @@ static bool ToBool(int i) {
 
 	static bool[,] set = {
 		{T,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x},
-		{x,T,T,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,x,x, x,T,T,T, T,x,x,x},
+		{x,T,T,x, x,x,x,x, x,x,T,T, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x},
 		{x,x,x,x, x,T,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x},
-		{x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x},
-		{x,T,T,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,T,T, T,x,x,x}
+		{x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x, T,T,T,T, x,x,x,x},
+		{x,T,T,x, x,x,x,x, x,x,x,x, x,T,T,T, x,x,x,x, x,x,x,x, x,x,x,x}
 
 	};
 
@@ -449,27 +551,31 @@ public class Errors {
 			case 7: s = "\",\" expected"; break;
 			case 8: s = "\"||\" expected"; break;
 			case 9: s = "\"&&\" expected"; break;
-			case 10: s = "\"==\" expected"; break;
-			case 11: s = "\"!=\" expected"; break;
-			case 12: s = "\"<\" expected"; break;
-			case 13: s = "\"<=\" expected"; break;
-			case 14: s = "\">\" expected"; break;
-			case 15: s = "\">=\" expected"; break;
-			case 16: s = "\"+\" expected"; break;
-			case 17: s = "\"-\" expected"; break;
-			case 18: s = "\"*\" expected"; break;
-			case 19: s = "\"/\" expected"; break;
-			case 20: s = "\"%\" expected"; break;
-			case 21: s = "\"!\" expected"; break;
-			case 22: s = "\"true\" expected"; break;
-			case 23: s = "\"false\" expected"; break;
-			case 24: s = "\"(\" expected"; break;
-			case 25: s = "\")\" expected"; break;
+			case 10: s = "\"+\" expected"; break;
+			case 11: s = "\"-\" expected"; break;
+			case 12: s = "\"!\" expected"; break;
+			case 13: s = "\"true\" expected"; break;
+			case 14: s = "\"false\" expected"; break;
+			case 15: s = "\"(\" expected"; break;
+			case 16: s = "\")\" expected"; break;
+			case 17: s = "\"*\" expected"; break;
+			case 18: s = "\"/\" expected"; break;
+			case 19: s = "\"%\" expected"; break;
+			case 20: s = "\"<\" expected"; break;
+			case 21: s = "\"<=\" expected"; break;
+			case 22: s = "\">\" expected"; break;
+			case 23: s = "\">=\" expected"; break;
+			case 24: s = "\"==\" expected"; break;
+			case 25: s = "\"!=\" expected"; break;
 			case 26: s = "??? expected"; break;
 			case 27: s = "this symbol not expected in Print"; break;
 			case 28: s = "this symbol not expected in Assignment"; break;
-			case 29: s = "invalid UnaryExp"; break;
-			case 30: s = "invalid Factor"; break;
+			case 29: s = "invalid EqlOp"; break;
+			case 30: s = "invalid RelOp"; break;
+			case 31: s = "invalid AddOp"; break;
+			case 32: s = "invalid UnaryExp"; break;
+			case 33: s = "invalid MulOp"; break;
+			case 34: s = "invalid Factor"; break;
 
 			default: s = "error " + n; break;
 		}

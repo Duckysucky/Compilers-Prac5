@@ -6,12 +6,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Parva {
+namespace Calc {
 
-  class Entry {                      // Class for symbol record
-    public string name;             // Name of the symbol 
-    public bool status;           //status of the status 
-    public int value;              // values of the symbol 
+  class Entry {                                             // Class for symbol record
+    public string name;                                     // Name of the symbol 
+    public bool status;                                     // status of the status 
+    public int value;               // values of the symbol 
     public Entry(string name, bool status, int value) {
       this.name = name;
       this.status = status;
@@ -27,20 +27,32 @@ namespace Parva {
     } // Table.ClearTable
 
     public static void AddRef(string name, bool status, int value) {
+        int stop = 0;
+        for(stop = 0; stop< list.Count; stop++){
+            Entry symbol = list[stop];
+            if(name == symbol.name){
+                symbol.value = value;
+                list[stop]= symbol;
+            }
+        }
+        if( stop== list.Count){
             Entry symbol = new Entry(name,status,value);
             list.Add(symbol);
+        }
     } // Table.AddRef
-    public static void Retrieve (string name)// retrieve the value of the given symbol
+    
+    public static int Retrieve (string name)
     {
-        for(int stop = 0; stop<list.Length; stop++){
+        for(int stop = 0; stop<list.Count; stop++){
             Entry indexInfo = list[stop];
             if(name == indexInfo.name){
                 return indexInfo.value;
             }
         }
-        return("Symbol does not exist");
-    }
-    /*
+        return(0);
+    }// retrieve the value of the given symbol
+
+    
     public static void PrintTable() {
             // Prints out all references in the table (eliminate duplicates line numbers)
             //...
@@ -48,18 +60,14 @@ namespace Parva {
         for(int stop =0; stop<list.Count; stop++)
             {
                 Entry currIndex = list[stop];
-                output += currIndex.name + "\t \t"; 
-                for (int stop2=0; stop2< currIndex.refs.Count; stop2++)
-                {
-                    output += currIndex.refs[stop2] + "\t";
-                }
+                output += currIndex.name + " " + currIndex.value+ "\t \t";                 
                 output += "\n";
             }
-           StreamWriter outputFile = System.IO.File.CreateText("output.txt");
+           StreamWriter outputFile = System.IO.File.CreateText("outputCalc.txt");
             outputFile.Write(output);
             outputFile.Close();
     } // Table.PrintTable
-     */
+     
   } // Table
 
 } // namespace

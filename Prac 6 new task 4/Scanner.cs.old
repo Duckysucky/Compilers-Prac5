@@ -76,29 +76,29 @@ public class Scanner {
 	const int comma_Sym = 7;
 	const int barbar_Sym = 8;
 	const int andand_Sym = 9;
-	const int equalequal_Sym = 10;
-	const int bangequal_Sym = 11;
-	const int less_Sym = 12;
-	const int lessequal_Sym = 13;
-	const int greater_Sym = 14;
-	const int greaterequal_Sym = 15;
-	const int plus_Sym = 16;
-	const int minus_Sym = 17;
-	const int star_Sym = 18;
-	const int slash_Sym = 19;
-	const int percent_Sym = 20;
-	const int bang_Sym = 21;
-	const int true_Sym = 22;
-	const int false_Sym = 23;
-	const int lparen_Sym = 24;
-	const int rparen_Sym = 25;
+	const int plus_Sym = 10;
+	const int minus_Sym = 11;
+	const int bang_Sym = 12;
+	const int true_Sym = 13;
+	const int false_Sym = 14;
+	const int lparen_Sym = 15;
+	const int rparen_Sym = 16;
+	const int star_Sym = 17;
+	const int slash_Sym = 18;
+	const int percent_Sym = 19;
+	const int less_Sym = 20;
+	const int lessequal_Sym = 21;
+	const int greater_Sym = 22;
+	const int greaterequal_Sym = 23;
+	const int equalequal_Sym = 24;
+	const int bangequal_Sym = 25;
 	const int NOT_SYM = 26;
 	// pragmas
 
 	static short[] start = {
 	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	  0, 21,  0,  0,  0, 17,  7,  0, 18, 19, 15, 13,  4, 14,  0, 16,
+	  0, 21,  0,  0,  0, 15,  7,  0, 11, 12, 13,  9,  4, 10,  0, 14,
 	  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  3, 22, 20, 23,  0,
 	  0,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,
 	  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  0,  0,  0,  0,  0,
@@ -226,38 +226,38 @@ public class Scanner {
 			case 8:
 				{ t.kind = andand_Sym; goto done; }
 			case 9:
-				{ t.kind = equalequal_Sym; goto done; }
-			case 10:
-				{ t.kind = bangequal_Sym; goto done; }
-			case 11:
-				{ t.kind = lessequal_Sym; goto done; }
-			case 12:
-				{ t.kind = greaterequal_Sym; goto done; }
-			case 13:
 				{ t.kind = plus_Sym; goto done; }
-			case 14:
+			case 10:
 				{ t.kind = minus_Sym; goto done; }
-			case 15:
-				{ t.kind = star_Sym; goto done; }
-			case 16:
-				{ t.kind = slash_Sym; goto done; }
-			case 17:
-				{ t.kind = percent_Sym; goto done; }
-			case 18:
+			case 11:
 				{ t.kind = lparen_Sym; goto done; }
-			case 19:
+			case 12:
 				{ t.kind = rparen_Sym; goto done; }
+			case 13:
+				{ t.kind = star_Sym; goto done; }
+			case 14:
+				{ t.kind = slash_Sym; goto done; }
+			case 15:
+				{ t.kind = percent_Sym; goto done; }
+			case 16:
+				{ t.kind = lessequal_Sym; goto done; }
+			case 17:
+				{ t.kind = greaterequal_Sym; goto done; }
+			case 18:
+				{ t.kind = equalequal_Sym; goto done; }
+			case 19:
+				{ t.kind = bangequal_Sym; goto done; }
 			case 20:
-				if (ch == '=') { buf.Append(ch); NextCh(); goto case 9; }
+				if (ch == '=') { buf.Append(ch); NextCh(); goto case 18; }
 				else { t.kind = equal_Sym; goto done; }
 			case 21:
-				if (ch == '=') { buf.Append(ch); NextCh(); goto case 10; }
+				if (ch == '=') { buf.Append(ch); NextCh(); goto case 19; }
 				else { t.kind = bang_Sym; goto done; }
 			case 22:
-				if (ch == '=') { buf.Append(ch); NextCh(); goto case 11; }
+				if (ch == '=') { buf.Append(ch); NextCh(); goto case 16; }
 				else { t.kind = less_Sym; goto done; }
 			case 23:
-				if (ch == '=') { buf.Append(ch); NextCh(); goto case 12; }
+				if (ch == '=') { buf.Append(ch); NextCh(); goto case 17; }
 				else { t.kind = greater_Sym; goto done; }
 
 		}
