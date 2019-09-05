@@ -1,7 +1,15 @@
 COMPILER Parva $CN
 /* Parva level 1 grammar  - Coco/R for C# (EBNF)
    P.D. Terry, Rhodes University, 2016
-   Extended Grammar similar to that done in Prac 3  */
+   Extended Grammar similar to that done in Prac 3  
+   
+   Group members:
+    G16n3498
+    G16v4032
+    G16T5351
+    G16M4204
+
+   */
 
   const bool define = true;
   const bool referenced = false;

@@ -17,6 +17,8 @@ COMPILER Parva $NC
   const bool
     known = true;
 
+  static bool CheckStatementUse = false;
+
   // This next method might better be located in the code generator.  Traditionally
   // it has been left in the ATG file, but that might change in future years
   //
@@ -180,23 +182,27 @@ PRODUCTIONS
                                               .) 
 .
 
-  Statement<StackFrame frame>
-  =  SYNC (   Block<frame>
-            | ConstDeclarations
-            | VarDeclarations<frame>
-            | AssignmentOrCall
-            | IfStatement<frame>
-            | WhileStatement<frame>
-            | HaltStatement
-            | ReturnStatement
-            | ReadStatement
-            | WriteStatement
-            | ";"
+  Statement<StackFrame frame> 
+  =  SYNC (   Block<frame> (. if (CheckStatementUse == false) 
+                                                {
+                                                 Warning("Empty body.");
+                                                }
+                                              .)
+            | ConstDeclarations (. CheckStatementUse = true; .)
+            | VarDeclarations<frame> (. CheckStatementUse = true; .)
+            | AssignmentOrCall (. CheckStatementUse = true; .)
+            | IfStatement<frame> 
+            | WhileStatement<frame> 
+            | HaltStatement (. CheckStatementUse = true; .)
+            | ReturnStatement (. CheckStatementUse = true; .)
+            | ReadStatement (. CheckStatementUse = true; .)
+            | WriteStatement (. CheckStatementUse = true; .)
+            | ";" (. .)
           ) .
 
   Block<StackFrame frame>
-  =                                          (. Table.OpenScope(); .)
-     "{" { Statement<frame> }
+  =    (. CheckStatementUse = false; .)                                      (. Table.OpenScope(); .)
+     "{" { Statement<frame> }                
      WEAK "}"                                (. Table.CloseScope(); .)
   .
 
@@ -318,12 +324,16 @@ PRODUCTIONS
                                              (. Label loopExit  = new Label(!known);
                                                 Label loopStart = new Label(known); .)
   =  "while" "(" Condition ")"               (. CodeGen.BranchFalse(loopExit); .)
-     Statement<frame>              	     (. CodeGen.Branch(loopStart);
-                                                loopExit.Here(); .)
+     Statement<frame>              	     (. if(token.val == ";")
+                                              {
+                                                Warning("Can not have an empty statement.");
+                                              }
+                                             CodeGen.Branch(loopStart);
+                                              loopExit.Here(); .)
   .
 
   HaltStatement
-  =  "halt"                                  (. CodeGen.LeaveProgram(); .)
+  =  "halt" ["("stringLit (. CodeGen.WriteString(token.val); .) ")"]                                 (. CodeGen.LeaveProgram();  .)
      WEAK ";"
   .
 

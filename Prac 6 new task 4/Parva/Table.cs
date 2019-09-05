@@ -1,6 +1,14 @@
 // Handle cross reference table for Parva
 // P.D. Terry, Rhodes University, 2016
+/*
+ Group members:
+    G16n3498
+    G16v4032
+    G16T5351
+    G16M4204
 
+    Synbol table for parva
+ */
 using Library;
 using System.Collections.Generic;
 using System.IO;

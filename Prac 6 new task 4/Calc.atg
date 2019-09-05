@@ -2,6 +2,13 @@ using Library;
 
 COMPILER Calc $NC
 //  Put your names and a description here
+/*
+G16n3498
+G16v4032
+G16T5351
+G16M4204
+
+*/
 
 static int ToInt(bool b) {
 // return 0 or 1 according as b is false or true

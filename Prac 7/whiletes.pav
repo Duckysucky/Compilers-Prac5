@@ -1,0 +1,15 @@
+void Main () {
+// while2.pav
+// nested while loops
+  int i = 10;
+  while (i < 10) {
+            while( i > 1){
+                              if(i> 2) {
+                                       
+                                        } 
+
+                         }
+   
+  }
+i= i + 1;
+            }

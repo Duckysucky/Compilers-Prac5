@@ -1,0 +1,14 @@
+
+   1 void Main () { $C+
+****                ^ "}" expected
+   2 // break0.pav
+   3 // Simple break statements
+   4   while (true) {
+   5     write(1);
+   6     break;
+   7     write(2);
+   8     break;
+   9   }
+  10 }
+
+1 errors detected
