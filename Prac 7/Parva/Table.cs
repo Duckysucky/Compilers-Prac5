@@ -17,7 +17,8 @@ namespace Parva {
       nullType  =  2,             // array types are denoted by these
       intType   =  4,             // numbers + 1
       boolType  =  6,
-      voidType  = 8;
+      voidType  = 8,      
+      charType = 10;
 
     static List<string> typeNames = new List<string>();
 

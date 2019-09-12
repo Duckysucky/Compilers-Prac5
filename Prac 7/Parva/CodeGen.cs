@@ -135,6 +135,7 @@ namespace Parva {
       switch (type) {
         case Types.intType:  Emit(PVM.inpi); break;
         case Types.boolType: Emit(PVM.inpb); break;
+        case Types.charType: Emit(PVM.inpc); break;
       }
     } // CodeGen.Read
 
@@ -148,6 +149,7 @@ namespace Parva {
       switch (type) {
         case Types.intType:  Emit(PVM.prni); break;
         case Types.boolType: Emit(PVM.prnb); break;
+        case Types.charType: Emit(PVM.prnc); break;
       }
     } // CodeGen.Write
 

@@ -1,4 +1,4 @@
-void Main () { $C+
+void Main () { 
 // break3.pav
 // Illegal break statements
   int i = 0;

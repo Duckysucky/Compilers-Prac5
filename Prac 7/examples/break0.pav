@@ -1,4 +1,4 @@
-void Main () { $C+
+void Main () { 
 // break0.pav
 // Simple break statements
   while (true) {

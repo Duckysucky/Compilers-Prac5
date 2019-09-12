@@ -18,6 +18,7 @@ COMPILER Parva $NC
     known = true;
 
   static bool CheckStatementUse = false;
+  static bool isLoop = false;
 
   // This next method might better be located in the code generator.  Traditionally
   // it has been left in the ATG file, but that might change in future years
@@ -58,7 +59,7 @@ COMPILER Parva $NC
   static Label mainEntryPoint = new Label(!known);
 
   static bool IsArith(int type) {
-    return type == Types.intType || type == Types.noType;
+    return type == Types.intType || type == Types.noType || type == Types.charType;
   } // IsArith
 
   static bool IsBool(int type) {
@@ -193,12 +194,15 @@ PRODUCTIONS
             | AssignmentOrCall (. CheckStatementUse = true; .)
             | IfStatement<frame> 
             | WhileStatement<frame> 
+            | DoWhile<frame>
+            | BreakStatement (. CheckStatementUse = true; if(isLoop == false) {Warning("BreakStatement used in an incorrect statement");} .)
             | HaltStatement (. CheckStatementUse = true; .)
             | ReturnStatement (. CheckStatementUse = true; .)
             | ReadStatement (. CheckStatementUse = true; .)
             | WriteStatement (. CheckStatementUse = true; .)
             | ";" (. .)
           ) .
+
 
   Block<StackFrame frame>
   =    (. CheckStatementUse = false; .)                                      (. Table.OpenScope(); .)
@@ -221,7 +225,7 @@ PRODUCTIONS
 
   Constant<out ConstRec con>                 (. con = new ConstRec(); .)
   =   IntConst<out con.value>                (. con.type = Types.intType; .)
-    | CharConst<out con.value>               (. con.type = Types.intType; .)
+    | CharConst<out con.value>               (. con.type = Types.charType; .)
     | "true"                                 (. con.type = Types.boolType; con.value = 1; .)
     | "false"                                (. con.type = Types.boolType; con.value = 0; .)
     | "null"                                 (. con.type = Types.nullType; con.value = 0; .)
@@ -229,7 +233,7 @@ PRODUCTIONS
 
   VarDeclarations<StackFrame frame>          (. int type; .)
   =  Type<out type>                          
-     VarList<frame, type>
+     VarList<frame, type> []
      WEAK ";"
   .
 
@@ -241,6 +245,7 @@ PRODUCTIONS
   BasicType<out int type>                    (. type = Types.noType; .)
   =   "int"                                  (. type = Types.intType; .)
     | "bool"                                 (. type = Types.boolType; .)
+    | "char"                                 (. type = Types.charType; .)
   .
 
 
@@ -316,16 +321,23 @@ PRODUCTIONS
   IfStatement<StackFrame frame>
                                              (. Label falseLabel = new Label(!known); .)
   =  "if" "(" Condition ")"                  (. CodeGen.BranchFalse(falseLabel); .)
-        Statement<frame>           (. falseLabel.Here(); .)
+      Statement<frame>                        (. falseLabel.Here();.)
+        [ "else" Statement<frame>]
   .
 
+
+  DoWhile<StackFrame frame>
+    = "do" (. isLoop = true; .) Block<frame> (. isLoop = false; .) "while" "(" Condition ")" 
+
+  .
 
   WhileStatement<StackFrame frame>
                                              (. Label loopExit  = new Label(!known);
                                                 Label loopStart = new Label(known); .)
   =  "while" "(" Condition ")"               (. CodeGen.BranchFalse(loopExit); .)
-     Statement<frame>              	     (. if(token.val == ";")
-                                              {
+     (. isLoop = true; .) Statement<frame>    (.  isLoop = false;
+                                               if(token.val == ";")    
+                                                   {
                                                 Warning("Can not have an empty statement.");
                                               }
                                              CodeGen.Branch(loopStart);
@@ -337,13 +349,17 @@ PRODUCTIONS
      WEAK ";"
   .
 
+  BreakStatement
+  =  "break" WEAK ";"   
+  .
+
   ReturnStatement              
   =  "return"				(. CodeGen.LeaveVoidFunction(); .)
     WEAK ";"
   .
 
   ReadStatement
-  = (   "read"     "("   ReadList   ")"
+  = (   "read"     "("   ReadList   ")"      
       | "readLine" "(" [ ReadList ] ")"      (. CodeGen.ReadLine(); .)
     )
     WEAK ";"
@@ -353,14 +369,15 @@ PRODUCTIONS
   = ReadElement { WEAK "," ReadElement }
   .
 
-  ReadElement                                (. string str;
-                                                DesType des; .)
+  ReadElement                                (. string str; DesType des; char ch;.)
+
   =   StringConst<out str>                   (. CodeGen.WriteString(str); .)
     | Designator<out des>                    (. if (des.entry.kind != Kinds.Var)
                                                   SemError("wrong kind of identifier");
                                                 switch (des.type) {
                                                   case Types.intType:
                                                   case Types.boolType:
+                                                  case Types.charType:
                                                     CodeGen.Read(des.type); break;
                                                   default:
                                                     SemError("cannot read this type"); break;
@@ -378,14 +395,14 @@ PRODUCTIONS
   = WriteElement { WEAK "," WriteElement }
   .
 
-  WriteElement                               (. int expType;
-                                                string str; .)
-  =   StringConst<out str>                   (. CodeGen.WriteString(str); .)
+  WriteElement                               (. int expType; string str; string concatStr = ""; .)
+  =  StringConst<out str> { StringConst<out concatStr> }     (. CodeGen.WriteString(str+concatStr); .)
     | Expression<out expType>                (. if (!(IsArith(expType) || expType == Types.boolType))
                                                   SemError("cannot write this type");
                                                 switch (expType) {
                                                   case Types.intType:
                                                   case Types.boolType:
+                                                  case Types.charType:
                                                     CodeGen.Write(expType); break;
                                                   default:
                                                     break;
@@ -532,7 +549,7 @@ PRODUCTIONS
   .
 
   CharConst<out int value>
-  =  charLit                                 (. string str = token.val;
+  =  charLit                                 (. string str = token.val ;
                                                 str = Unescape(str.Substring(1, str.Length - 2));
                                                 value = str[0]; .)
   .

@@ -66,26 +66,26 @@ namespace Parva {
       bool assembledOK = Parser.Successful();
       int initSP = CodeGen.GetInitSP();
       if(Cod == true){
-      string codeName = newFileName(inputName, ".cod");
-      int codeLength = CodeGen.GetCodeLength();
-      PVM.ListCode(codeName, codeLength);
-      if (!assembledOK || codeLength == 0) {
-        Console.WriteLine("Unable to interpret code");
-        System.Environment.Exit(1);
-      }
-      else if (!execution) {
-        Console.WriteLine("\nCompiled: exiting with no execution requested");
-        System.Environment.Exit(1);
-      }
-      else {
-        if (immediate) PVM.QuickInterpret(codeLength, initSP);
-        char reply = 'n';
-        do {
-          Console.Write("\n\nInterpret [y/N]? ");
-          reply = (Console.ReadLine() + " ").ToUpper()[0];
-          if (reply == 'Y') PVM.Interpret(codeLength, initSP);
-        } while (reply == 'Y');
-      }
+        string codeName = newFileName(inputName, ".cod");
+        int codeLength = CodeGen.GetCodeLength();
+        PVM.ListCode(codeName, codeLength);
+        if (!assembledOK || codeLength == 0) {
+          Console.WriteLine("Unable to interpret code");
+          System.Environment.Exit(1);
+        }
+        else if (!execution) {
+          Console.WriteLine("\nCompiled: exiting with no execution requested");
+          System.Environment.Exit(1);
+        }
+        else {
+          if (immediate) PVM.QuickInterpret(codeLength, initSP);
+          char reply = 'n';
+          do {
+            Console.Write("\n\nInterpret [y/N]? ");
+            reply = (Console.ReadLine() + " ").ToUpper()[0];
+            if (reply == 'Y') PVM.Interpret(codeLength, initSP);
+          } while (reply == 'Y');
+        }
       }
     } // Main
 

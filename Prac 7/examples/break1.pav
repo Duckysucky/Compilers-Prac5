@@ -1,4 +1,4 @@
-void Main () { $C+
+void Main () { 
 // break1.pav
 // Two break statements in one loop
   int i = 0;

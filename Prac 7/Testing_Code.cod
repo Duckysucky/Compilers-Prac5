@@ -1,0 +1,17 @@
+ASSEM
+BEGIN
+  {    0 } FHDR    
+  {    1 } CALL     4
+  {    3 } HALT    
+  {    4 } DSP      1
+  {    6 } LDA      4
+  {    8 } LDA      0
+  {   10 } LDV     
+  {   11 } LDC      10
+  {   13 } ADD     
+  {   14 } STO     
+  {   15 } LDA      4
+  {   17 } LDV     
+  {   18 } PRNI    
+  {   19 } RETV    
+END.
