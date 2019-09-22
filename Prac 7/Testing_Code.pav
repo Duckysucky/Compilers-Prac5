@@ -1,5 +1,5 @@
-void Main () {     // Read a sentence and write it SDRAWKCAB (backwards)  
-int c = 'a' +10;
- write(c);  
-} // Main 
- 
+void Main () {
+  int i = 2;    
+  --i;
+  write(i);
+}

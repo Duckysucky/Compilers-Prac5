@@ -18,7 +18,7 @@ namespace Parva {
       else this.memAdr = CodeGen.undefined;  // mark end of forward reference chain
       this.defined = known;
     } // constructor
-
+  
     public int Address() {
     // Returns memAdr if known, otherwise effectively adds to a forward reference
     // chain that will be resolved if and when Here() is called and returns the
@@ -86,6 +86,16 @@ namespace Parva {
     // Generates code to negate integer value on top of evaluation stack
       Emit(PVM.neg);
     } // CodeGen.NegateInteger
+
+  public static void ConvertChar (int To){
+    //Generates code to convert a character to upper or lower case
+    if(To == 1){ //ToUpper
+      Emit(PVM.cap);
+    }
+    else{ //ToLower
+      Emit(PVM.low);
+    }
+  }
 
     public static void NegateBoolean() {
     // Generates code to negate boolean value on top of evaluation stack
@@ -204,6 +214,17 @@ namespace Parva {
       Emit(PVM.ldv);
     } // CodeGen.Dereference
 
+  public static void ConvertToInt (){
+    // Pop integer value on top of stack and pushs a character value
+    Emit(PVM.i2c);
+    Emit(PVM.sto);
+  }
+  public static void ConvertToChar (){
+    // Pop integer value on top of stack and pushs a character value
+    Emit(PVM.c2i);
+    Emit(PVM.sto);
+  }
+
     public static void Assign(int type) {
     // Generates code to store value currently on top-of-stack on the address
     // given by next-to-top, popping these two elements
@@ -250,6 +271,11 @@ namespace Parva {
     // value currently on top of the evaluation stack, popping this value
       Emit(PVM.bze); Emit(destination.Address());
     } // CodeGen.BranchFalse
+
+    public static void paraJump (){
+      // Pop the stack and will use the value popped as the destination location
+      Emit(PVM.pjp);
+    }
 
     public static void FrameHeader() {
     // Generates code to allocate standard stack frame header

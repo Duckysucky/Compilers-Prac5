@@ -43,6 +43,7 @@ namespace Parva {
       lst.WriteLine();
     } // Types.Show
 
+
   } // end Types
 
   class Kinds {
@@ -114,6 +115,31 @@ namespace Parva {
 
     static Scope topScope = null;
     static Entry sentinelEntry;   // marker node at end of each scope list
+    public static List<int> addresses = new List<int>();
+
+    public static void AddLoca(int location) {
+      addresses.Add(location);
+    }// A new address Location to the adresses list
+
+    public static void ClearAddress() {
+            addresses.Clear();
+    } // Clears the addresses
+
+    public static int retrieve (){
+      int locationReturn;
+      if(addresses.Count>=1){
+        locationReturn =  addresses[0];
+        addresses.RemoveAt(0);
+      }
+      else{
+        locationReturn = 0;
+      }
+      return locationReturn;
+    } //Returns the correct address and updates the addresses List with location which have not been to
+
+    public static int ListLength(){
+      return addresses.Count;
+    }
 
     public static void Insert(Entry entry) {
     // Adds entry to symbol table

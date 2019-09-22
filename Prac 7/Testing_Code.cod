@@ -5,13 +5,16 @@ BEGIN
   {    3 } HALT    
   {    4 } DSP      1
   {    6 } LDA      4
-  {    8 } LDA      0
-  {   10 } LDV     
-  {   11 } LDC      10
-  {   13 } ADD     
-  {   14 } STO     
-  {   15 } LDA      4
-  {   17 } LDV     
-  {   18 } PRNI    
-  {   19 } RETV    
+  {    8 } LDC      2
+  {   10 } STO     
+  {   11 } LDA      4
+  {   13 } LDA      4
+  {   15 } LDV     
+  {   16 } LDC      1
+  {   18 } SUB     
+  {   19 } STO     
+  {   20 } LDA      4
+  {   22 } LDV     
+  {   23 } PRNI    
+  {   24 } RETV    
 END.

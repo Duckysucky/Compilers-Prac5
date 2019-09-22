@@ -18,7 +18,19 @@ COMPILER Parva $NC
     known = true;
 
   static bool CheckStatementUse = false;
-  static bool isLoop = false;
+  static int isLoop = 0;
+  static Label breakLocation = new Label(!known);
+  static Entry increment_decrement;
+  static DesType storeType;
+  static Entry LocationConvert;
+  static bool checkConvert = false;
+  static int typeOf;
+  static bool convertValue = true;
+  static Label ForStat;
+  static Entry ForStatEntry;
+  static int SaveLocation = 0;
+  static Entry array;
+  static int increForLoop=0;
 
   // This next method might better be located in the code generator.  Traditionally
   // it has been left in the ATG file, but that might change in future years
@@ -174,16 +186,16 @@ PRODUCTIONS
      Ident<out param.name>         (. Table.Insert(param); .)
   .
 
-  Body<StackFrame frame>       (. Label DSPLabel = new Label(known);
+  Body<StackFrame frame>       (. Label DSPLabel = new Label(known); Label bodyLabal = new Label(!known);
                                                 int sizeMark = frame.size;
                                                 CodeGen.OpenStackFrame(0); .)
-  =  "{" { Statement<frame> }
+  =  "{" { Statement<frame, out bodyLabal> }
      WEAK "}"                                (. CodeGen.FixDSP(DSPLabel.Address(), frame.size - sizeMark);
                                                 CodeGen.LeaveVoidFunction();
                                               .) 
 .
 
-  Statement<StackFrame frame> 
+  Statement<StackFrame frame, out Label statementLabal> (. statementLabal = breakLocation; .)
   =  SYNC (   Block<frame> (. if (CheckStatementUse == false) 
                                                 {
                                                  Warning("Empty body.");
@@ -193,20 +205,27 @@ PRODUCTIONS
             | VarDeclarations<frame> (. CheckStatementUse = true; .)
             | AssignmentOrCall (. CheckStatementUse = true; .)
             | IfStatement<frame> 
+            | ForStatement<frame>
             | WhileStatement<frame> 
             | DoWhile<frame>
-            | BreakStatement (. CheckStatementUse = true; if(isLoop == false) {Warning("BreakStatement used in an incorrect statement");} .)
+            | BreakStatement (. CheckStatementUse = true; 
+                              if(isLoop == 0) {
+                                Warning("BreakStatement used in an incorrect statement");
+                                }
+                                 CodeGen.Branch(breakLocation);.)
             | HaltStatement (. CheckStatementUse = true; .)
             | ReturnStatement (. CheckStatementUse = true; .)
             | ReadStatement (. CheckStatementUse = true; .)
             | WriteStatement (. CheckStatementUse = true; .)
+            | ConvertStatement (. CheckStatementUse = true; .)
+            | CastingStatement (. CheckStatementUse = true; .)
             | ";" (. .)
           ) .
 
 
-  Block<StackFrame frame>
+  Block<StackFrame frame>                       (. Label blockLabal = new Label(!known); .)
   =    (. CheckStatementUse = false; .)                                      (. Table.OpenScope(); .)
-     "{" { Statement<frame> }                
+     "{" { Statement<frame, out blockLabal>  }   (.  breakLocation = new Label(!known); .)             
      WEAK "}"                                (. Table.CloseScope(); .)
   .
 
@@ -243,9 +262,10 @@ PRODUCTIONS
        ] .
 
   BasicType<out int type>                    (. type = Types.noType; .)
-  =   "int"                                  (. type = Types.intType; .)
-    | "bool"                                 (. type = Types.boolType; .)
-    | "char"                                 (. type = Types.charType; .)
+  =   "int"                                  (. type = Types.intType; typeOf = type; .)
+    | "bool"                                 (. type = Types.boolType; typeOf = type; .)
+    | "char"                                 (. type = Types.charType; typeOf = type; .)
+    
   .
 
 
@@ -261,25 +281,107 @@ PRODUCTIONS
                                                 var.offset = frame.size;
                                                 frame.size++; .)
      [ AssignOp                              (. CodeGen.LoadAddress(var); .)
+     (
+       CastingStatement
+       |
        Expression<out expType>               (. if (!Assignable(var.type, expType))
                                                   SemError("incompatible types in assignment");
                                                 CodeGen.Assign(var.type); .)
-     ]                                       (. Table.Insert(var); .)
+     )
+     ]                                      (. Table.Insert(var); .)
+     
   .
 
 
   AssignmentOrCall                           (. int expType;
-                                                DesType des; .)
+                                                DesType des; bool indenPlus = false; bool indenMinus = false;.)
   =  (  IF (IsCall(out des))                    // /* use resolver to handle LL(1) conflict */
+ 
          identifier                          (. CodeGen.FrameHeader(); .)
          "(" Arguments<des> ")"              (. CodeGen.Call(des.entry.entryPoint); .)
-      |  Designator<out des>                 (. if (des.entry.kind != Kinds.Var)
-                                                  SemError("cannot assign to " + Kinds.kindNames[des.entry.kind]); .)
-         AssignOp
-         Expression<out expType>             (. if (!Assignable(des.type, expType))
-                                                SemError("incompatible types in assignment");
-                                                CodeGen.Assign(des.type); .)
-     ) WEAK ";"
+      |   
+       [
+            "--"                                      (. 
+                                                    
+                                                    indenMinus = true;
+                                               .)
+        |
+            "++"                                      (. 
+                                                      
+                                                    indenPlus = true;
+                                               .)                                       
+        ]  
+        Designator<out des>                 (. if (des.entry.kind != Kinds.Var)
+                                                  SemError("cannot assign to " + Kinds.kindNames[des.entry.kind]);                                                   
+                                                  if(indenMinus ==true){
+                                                  CodeGen.LoadAddress(increment_decrement);
+                                                  CodeGen.Dereference();
+                                                  CodeGen.LoadConstant(1);
+                                                  CodeGen.BinaryOp(CodeGen.sub);
+                                                  CodeGen.Assign(0);
+                                                  }
+                                                  if(indenPlus ==true){
+                                                  CodeGen.LoadAddress(increment_decrement);
+                                                  CodeGen.Dereference();
+                                                  CodeGen.LoadConstant(1);
+                                                  CodeGen.BinaryOp(CodeGen.add);
+                                                  CodeGen.Assign(0);
+                                                  }                                                  
+                                                  .)
+      (
+            WEAK ";"
+          |
+
+            (. if(indenPlus == true || indenMinus == true){SemError(" Incorrect syntax ");} .)
+          ( 
+            "--" WEAK ";"                      
+            |
+             "++" (. if(indenPlus == true || indenMinus == true){SemError(" Incorrect syntax ");} .)  WEAK ";"                    
+            |
+          AssignOp 
+              (
+                CastingStatement
+                |
+                ConvertStatement
+                |
+                Expression<out expType>             (. if (!Assignable(des.type, expType))
+                                                    SemError("incompatible types in assignment");
+                                                    CodeGen.Assign(des.type); .)
+              )
+          WEAK ";"
+          )
+      )
+
+     ) 
+  .
+
+  CastingStatement            (. int expType; .)
+  =
+    "(" ( "int"                       (. 
+                                          if (typeOf != 4 )
+                                           {
+                                             SemError ("Incorrect casting");                                        
+                                            } 
+                                            convertValue = true ;
+                                      .)
+    |        
+       "char"                     (. 
+                                        if(typeOf != 10){
+                                        SemError ("Incorrect casting"); 
+                                        }
+                                        convertValue = false ;
+                                    .)
+        
+    )
+    ")"
+      Expression<out expType>               (. if(convertValue == false)
+                                                {
+                                                CodeGen.ConvertToChar(); 
+                                                }
+                                                else {
+                                                  CodeGen.ConvertToInt();
+                                                }
+                                                .)
   .
 
   Arguments<DesType des>                     (. int argCount = 0;
@@ -297,14 +399,44 @@ PRODUCTIONS
      )
   .
 
+  ConvertStatement                     (. DesType des; .)
+  = (. checkConvert = true; .)   
+    "cap" "(" Designator<out des>   (. 
+                                          storeType = des;
+                                          if(des.type == Types.charType){
+                                          CodeGen.Dereference();
+                                          CodeGen.ConvertChar(1);  
+                                          CodeGen.Assign(des.type);
+                                            }
+                                            else 
+                                            {
+                                              SemError("Can not function in current contest");
+                                            }
+                                      .)
+             ")"
+    | 
+      "low" "(" Designator<out des>   (. if(des.type == Types.charType)
+                                          CodeGen.ConvertChar(2);  .)
+      
+       ")"  
+
+  .
+
   Designator<out DesType des>                (. string name;
                                                 int indexType; .)
-  =  Ident<out name>                         (. Entry entry = Table.Find(name);
+  =
+    Ident<out name>                         (. Entry entry = Table.Find(name);                                               
                                                 if (!entry.declared)
                                                   SemError("undeclared identifier");
+                                                if(checkConvert == true){
+                                                  LocationConvert = entry;
+                                                  checkConvert = false;
+                                                }
                                                 des = new DesType(entry);
                                                 if (entry.kind == Kinds.Var)
-                                                  CodeGen.LoadAddress(entry); .)
+                                                  CodeGen.LoadAddress(entry); 
+                                                  increment_decrement = entry;
+                                                  .)
      [     "["                               (. if (IsArray(des.type)) des.type--;
                                                 else SemError("unexpected subscript");
                                                 if (des.entry.kind != Kinds.Var)
@@ -315,34 +447,86 @@ PRODUCTIONS
                                                 CodeGen.Index(); .)
 
            "]"
+           
      ]
   .
 
-  IfStatement<StackFrame frame>
-                                             (. Label falseLabel = new Label(!known); .)
+  IfStatement<StackFrame frame>               
+                                             (. Label falseLabel = new Label(!known); Label ifLabal;Label elseLabal; .)
   =  "if" "(" Condition ")"                  (. CodeGen.BranchFalse(falseLabel); .)
-      Statement<frame>                        (. falseLabel.Here();.)
-        [ "else" Statement<frame>]
+      Statement<frame, out ifLabal>          (. falseLabel.Here();.)
+        [ "else" Statement<frame, out elseLabal >]
   .
 
+  ForStatement<StackFrame frame>           (. int type; int type2 =0; string name; .)
+                                           
+   = "for"                                    (. 
+                                                  Label ExistLoop = new Label(!known);
+                                                  Label StartStat = new Label(!known);                                                
+                                               .)
+      Ident<out name>                         (. Entry entry = Table.Find(name);                            
+                                                if (!entry.declared)
+                                                  SemError("undeclared identifier"); 
+                                                ForStatEntry = entry;
+                                                CodeGen.LoadAddress(entry); 
+                                              .)
+     "in" 
+      "(" 
+      Expression<out type>                           (. 
+                                                        CodeGen.Assign(type);   
+                                                        increForLoop ++;                                                      
+                                                        CodeGen.Branch(StartStat); 
+
+                                                      .)          
+      { 
+       "," (.  Label expressionStartLoc = new Label(known); 
+                Table.AddLoca(expressionStartLoc.Address()); 
+                CodeGen.LoadAddress(ForStatEntry);           
+            .)
+        Expression <out type2>                        (.  CodeGen.Assign(type2);
+                                                        CodeGen.Branch(StartStat);
+                                                      .)   
+      }     
+      ")" 
+      (.         
+        StartStat.Here(); 
+        .)
+      Statement<frame, out breakLocation>    (.                                                                 
+                                                      CodeGen.paraJump();   
+                                                        ExistLoop.Here();
+                                             .)
+      
+  .
 
   DoWhile<StackFrame frame>
-    = "do" (. isLoop = true; .) Block<frame> (. isLoop = false; .) "while" "(" Condition ")" 
+                                              (. Label loopStart = new  Label(!known);.)
+    = "do" (. isLoop = isLoop + 1; .)         (. Label loopExit  = new Label(!known);
+                                                CodeGen.Branch(loopExit); 
+                                                loopStart.Here();
+                                                 .)
+        Statement<frame, out breakLocation> (. isLoop = isLoop - 1; 
+                                                loopExit.Here(); .) 
+        "while" "(" Condition ")"           (.CodeGen.BranchFalse(loopStart); .)
 
   .
 
   WhileStatement<StackFrame frame>
                                              (. Label loopExit  = new Label(!known);
-                                                Label loopStart = new Label(known); .)
-  =  "while" "(" Condition ")"               (. CodeGen.BranchFalse(loopExit); .)
-     (. isLoop = true; .) Statement<frame>    (.  isLoop = false;
+                                                Label loopStart = new Label(known);
+                                                 .)
+  =  "while" "(" Condition ")"               (. CodeGen.BranchFalse(loopExit); 
+                                                  breakLocation = loopExit;
+                                              .)
+     (. isLoop = isLoop + 1; .) Statement<frame, out breakLocation>    (.  isLoop = isLoop - 1;
                                                if(token.val == ";")    
                                                    {
                                                 Warning("Can not have an empty statement.");
                                               }
-                                             CodeGen.Branch(loopStart);
-                                              loopExit.Here(); .)
+                                              CodeGen.Branch(loopStart);                                              
+                                              loopExit.Here();                                              
+                                              .)
   .
+
 
   HaltStatement
   =  "halt" ["("stringLit (. CodeGen.WriteString(token.val); .) ")"]                                 (. CodeGen.LeaveProgram();  .)
@@ -369,7 +553,7 @@ PRODUCTIONS
   = ReadElement { WEAK "," ReadElement }
   .
 
-  ReadElement                                (. string str; DesType des; char ch;.)
+  ReadElement                                (. string str; DesType des; .)
 
   =   StringConst<out str>                   (. CodeGen.WriteString(str); .)
     | Designator<out des>                    (. if (des.entry.kind != Kinds.Var)
@@ -395,8 +579,13 @@ PRODUCTIONS
   = WriteElement { WEAK "," WriteElement }
   .
 
-  WriteElement                               (. int expType; string str; string concatStr = ""; .)
-  =  StringConst<out str> { StringConst<out concatStr> }     (. CodeGen.WriteString(str+concatStr); .)
+  WriteElement                               (. int expType; DesType des; string str; string concatStr = ""; .)
+  = 
+    ConvertStatement                          (. CodeGen.LoadAddress(LocationConvert);
+                                                  CodeGen.Dereference();
+                                                  CodeGen.Write(storeType.type); .)
+    | 
+    StringConst<out str> { StringConst<out concatStr> }     (. CodeGen.WriteString(str+concatStr); .)
     | Expression<out expType>                (. if (!(IsArith(expType) || expType == Types.boolType))
                                                   SemError("cannot write this type");
                                                 switch (expType) {
@@ -417,7 +606,7 @@ PRODUCTIONS
   Expression<out int type>                   (. int type2;
                                                 int op;
                                                 bool comparable; .)
-  =  AddExp<out type>
+  =  AddExp<out type>                         
      [ RelOp<out op> AddExp<out type2>       (. switch (op) {
                                                   case CodeGen.ceq: case CodeGen.cne:
                                                     comparable = Compatible(type, type2);
@@ -428,7 +617,9 @@ PRODUCTIONS
                                                 }
                                                 if (!comparable)
                                                   SemError("incomparable operands");
-                                                type = Types.boolType; CodeGen.Comparison(op); .)
+                                                type = Types.boolType; CodeGen.Comparison(op); 
+                                                
+                                                .)
      ]
   .
 

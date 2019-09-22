@@ -63,8 +63,8 @@ public class Scanner {
 	const char EOL = '\n';
 	const int  eofSym = 0;
 	const int charSetSize = 256;
-	const int maxT = 49;
-	const int noSym = 49;
+	const int maxT = 55;
+	const int noSym = 55;
 	// terminals
 	const int EOF_SYM = 0;
 	const int identifier_Sym = 1;
@@ -86,50 +86,56 @@ public class Scanner {
 	const int int_Sym = 17;
 	const int bool_Sym = 18;
 	const int char_Sym = 19;
-	const int lbrack_Sym = 20;
-	const int rbrack_Sym = 21;
-	const int if_Sym = 22;
-	const int else_Sym = 23;
-	const int do_Sym = 24;
-	const int while_Sym = 25;
-	const int halt_Sym = 26;
-	const int break_Sym = 27;
-	const int return_Sym = 28;
-	const int read_Sym = 29;
-	const int readLine_Sym = 30;
-	const int write_Sym = 31;
-	const int writeLine_Sym = 32;
-	const int plus_Sym = 33;
-	const int minus_Sym = 34;
-	const int new_Sym = 35;
-	const int bang_Sym = 36;
-	const int barbar_Sym = 37;
-	const int star_Sym = 38;
-	const int slash_Sym = 39;
-	const int percent_Sym = 40;
-	const int andand_Sym = 41;
-	const int equalequal_Sym = 42;
-	const int bangequal_Sym = 43;
-	const int less_Sym = 44;
-	const int lessequal_Sym = 45;
-	const int greater_Sym = 46;
-	const int greaterequal_Sym = 47;
-	const int equal_Sym = 48;
-	const int NOT_SYM = 49;
+	const int minusminus_Sym = 20;
+	const int plusplus_Sym = 21;
+	const int cap_Sym = 22;
+	const int low_Sym = 23;
+	const int lbrack_Sym = 24;
+	const int rbrack_Sym = 25;
+	const int if_Sym = 26;
+	const int else_Sym = 27;
+	const int for_Sym = 28;
+	const int in_Sym = 29;
+	const int do_Sym = 30;
+	const int while_Sym = 31;
+	const int halt_Sym = 32;
+	const int break_Sym = 33;
+	const int return_Sym = 34;
+	const int read_Sym = 35;
+	const int readLine_Sym = 36;
+	const int write_Sym = 37;
+	const int writeLine_Sym = 38;
+	const int plus_Sym = 39;
+	const int minus_Sym = 40;
+	const int new_Sym = 41;
+	const int bang_Sym = 42;
+	const int barbar_Sym = 43;
+	const int star_Sym = 44;
+	const int slash_Sym = 45;
+	const int percent_Sym = 46;
+	const int andand_Sym = 47;
+	const int equalequal_Sym = 48;
+	const int bangequal_Sym = 49;
+	const int less_Sym = 50;
+	const int lessequal_Sym = 51;
+	const int greater_Sym = 52;
+	const int greaterequal_Sym = 53;
+	const int equal_Sym = 54;
+	const int NOT_SYM = 55;
 	// pragmas
-	const int DebugOn_Sym = 50;
-	const int DebugOff_Sym = 51;
-	const int StackDump_Sym = 52;
-	const int HeapDump_Sym = 53;
-	const int TableDump_Sym = 54;
+	const int DebugOn_Sym = 56;
+	const int DebugOff_Sym = 57;
+	const int StackDump_Sym = 58;
+	const int HeapDump_Sym = 59;
+	const int TableDump_Sym = 60;
 
 	static short[] start = {
 	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-	  0, 42,  4,  0, 17, 34, 35,  7, 20, 21, 32, 28, 22, 29,  0, 33,
-	  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  0, 25, 44, 43, 45,  0,
+	  0, 44,  4,  0, 17, 34, 35,  7, 20, 21, 32, 43, 22, 42,  0, 33,
+	  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  0, 25, 46, 45, 47,  0,
 	  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
-	  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 41,  0, 27,  0,  0,
+	  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 41,  0, 29,  0,  0,
 	  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
 	  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 23, 30, 24,  0,  0,
 	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -255,8 +261,12 @@ public class Scanner {
 			case "int": t.kind = int_Sym; break;
 			case "bool": t.kind = bool_Sym; break;
 			case "char": t.kind = char_Sym; break;
+			case "cap": t.kind = cap_Sym; break;
+			case "low": t.kind = low_Sym; break;
 			case "if": t.kind = if_Sym; break;
 			case "else": t.kind = else_Sym; break;
+			case "for": t.kind = for_Sym; break;
+			case "in": t.kind = in_Sym; break;
 			case "do": t.kind = do_Sym; break;
 			case "while": t.kind = while_Sym; break;
 			case "halt": t.kind = halt_Sym; break;
@@ -365,11 +375,11 @@ public class Scanner {
 			case 26:
 				{ t.kind = lbrackrbrack_Sym; goto done; }
 			case 27:
-				{ t.kind = rbrack_Sym; goto done; }
+				{ t.kind = minusminus_Sym; goto done; }
 			case 28:
-				{ t.kind = plus_Sym; goto done; }
+				{ t.kind = plusplus_Sym; goto done; }
 			case 29:
-				{ t.kind = minus_Sym; goto done; }
+				{ t.kind = rbrack_Sym; goto done; }
 			case 30:
 				if (ch == '|') { buf.Append(ch); NextCh(); goto case 31; }
 				else { t.kind = noSym; goto done; }
@@ -398,15 +408,21 @@ public class Scanner {
 				if (ch == ']') { buf.Append(ch); NextCh(); goto case 26; }
 				else { t.kind = lbrack_Sym; goto done; }
 			case 42:
+				if (ch == '-') { buf.Append(ch); NextCh(); goto case 27; }
+				else { t.kind = minus_Sym; goto done; }
+			case 43:
+				if (ch == '+') { buf.Append(ch); NextCh(); goto case 28; }
+				else { t.kind = plus_Sym; goto done; }
+			case 44:
 				if (ch == '=') { buf.Append(ch); NextCh(); goto case 38; }
 				else { t.kind = bang_Sym; goto done; }
-			case 43:
+			case 45:
 				if (ch == '=') { buf.Append(ch); NextCh(); goto case 37; }
 				else { t.kind = equal_Sym; goto done; }
-			case 44:
+			case 46:
 				if (ch == '=') { buf.Append(ch); NextCh(); goto case 39; }
 				else { t.kind = less_Sym; goto done; }
-			case 45:
+			case 47:
 				if (ch == '=') { buf.Append(ch); NextCh(); goto case 40; }
 				else { t.kind = greater_Sym; goto done; }
 

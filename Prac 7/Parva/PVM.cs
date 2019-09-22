@@ -117,6 +117,8 @@ namespace Parva {
       stoc    =  88,
       sub     =  89,
       trap    =  90,
+      c2i     =  91,
+      pjp     =  92,
 
       nul     = 255;                         // leave gap for future
 
@@ -144,7 +146,8 @@ namespace Parva {
       badAdr   =  9,
       badAll   = 10,
       nullRef  = 11,
-      badFun   = 12;
+      badFun   = 12,
+      badCast  = 13;
 
     static int ps;
 
@@ -237,6 +240,7 @@ namespace Parva {
         case badOp:    results.Write("Illegal opcode");           break;
         case badInd:   results.Write("Subscript out of range");   break;
         case badVal:   results.Write("Value out of range");       break;
+        case badCast:  results.Write("Invalid casting");          break;
         case badAdr:   results.Write("Bad address");              break;
         case badAll:   results.Write("Heap allocation error");    break;
         case nullRef:  results.Write("Null reference");           break;
@@ -283,7 +287,9 @@ namespace Parva {
       int loop;                   // internal loops
       int tos, sos;               // values popped from stack
       int adr;                    // effective address for memory accesses
-      int target;                 // destination for branches
+      int target;                 // destination for 
+      int store = 0;                  // saves the next location of 
+      int store2 = 0;                 // compares
       stackBase = initSP;
       heapBase = codeLen;         // initialize boundaries
       cpu.hp = heapBase;          // initialize registers
@@ -467,6 +473,7 @@ namespace Parva {
             tos = Pop(); adr = Pop();
             if (InBounds(adr)) mem[adr] = tos;
             break;
+            
           case PVM.stoc:          // character checked store
             tos = Pop(); adr = Pop();
             if (InBounds(adr))
@@ -507,6 +514,19 @@ namespace Parva {
             break;
           case PVM.i2c:           // check convert character to integer
             if (mem[cpu.sp] < 0 || mem[cpu.sp] > maxChar) ps = badVal;
+            else{
+              Push((int) Pop());              
+            }
+            break;
+          case PVM.c2i:           // check convert integer to 
+              adr = Pop();
+              if ((adr >= 65 && adr <= 90) || ( adr >= 97 && adr <= 122))
+              {
+                  Push((char)adr);
+              }
+              else{
+                ps = badCast;
+              }
             break;
           case PVM.prni:          // integer output
             if (tracing) results.Write(padding);
@@ -588,7 +608,9 @@ namespace Parva {
             tos = Pop(); Push(Pop() >= tos ? 1 : 0);
             break;
           case PVM.brn:           // unconditional branch
-            cpu.pc = Next();
+            store =  cpu.pc + 1;
+            store2 = Next();
+            cpu.pc = store2;           
             if (cpu.pc < 0 || cpu.pc >= codeLen) ps = badAdr;
             break;
           case PVM.bze:           // pop top of stack, branch if false
@@ -597,6 +619,13 @@ namespace Parva {
               cpu.pc = target;
               if (cpu.pc < 0 || cpu.pc >= codeLen) ps = badAdr;
             }
+            break;
+          case PVM.pjp:             // jumps to the location of given parameter
+            if(store == store2)
+              cpu.pc++;
+            else
+              cpu.pc = store;
+            if (cpu.pc < 0 || cpu.pc >= codeLen) ps = badAdr;
             break;
           case PVM.bfalse:        // conditional short circuit "and" branch
             target = Next();
@@ -920,6 +949,8 @@ namespace Parva {
       mnemonics[PVM.sto]      = "STO";
       mnemonics[PVM.stoc]     = "STOC";
       mnemonics[PVM.sub]      = "SUB";
+      mnemonics[PVM.c2i]      = "C2I";
+      mnemonics[PVM.pjp]      = "PJP";
       mnemonics[PVM.trap]     = "TRAP";
 
     } // PVM.Init
